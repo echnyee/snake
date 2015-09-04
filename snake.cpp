@@ -1,4 +1,5 @@
 #include "snake.h"
+#include <chrono>
 
 snakepart::snakepart(int col, int row) {
 	x = col;
@@ -210,8 +211,10 @@ void snakeclass::update_head()
 
 void snakeclass::start()
 {
+	using namespace std;
 	while(true)
 	{
+		chrono::monotonic_clock::time_point start = chrono::monotonic_clock::now();
     	if(collision())
     	{
             int midx = maxwidth/2 - 4;
@@ -225,7 +228,14 @@ void snakeclass::start()
     	movesnake();
     	if(direction == 'q')
     		break;
-    	usleep(interval);
+		chrono::monotonic_clock::time_point end = chrono::monotonic_clock::now();
+		chrono::monotonic_clock::duration d = end - start;
+		int time_elapsed = chrono::duration_cast<chrono::microseconds>(d).count();
+		int sleep_time = interval - time_elapsed;
+		if ((sleep_time) > 0)
+		{
+    		usleep(sleep_time);
+		}
 	}
 }
 
