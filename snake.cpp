@@ -11,25 +11,44 @@ snakepart::snakepart() {
 }
 
 snakeclass::snakeclass() {
+    initialize_screen();
+    customize_outlook();
+	
+    // initialize speed & direction
+    interval = 110000;
+	direction = 'l';
+
+    // haven't eat
+	eat = false;
+    // generate a random seed
+	srand(time(0));
+
+    create_border();
+    initialize_snake();
+	putfood();
+    initialize_points();
+	refresh();
+}
+
+void snakeclass::initialize_screen()
+{
 	initscr();
 	nodelay(stdscr, true);
 	keypad(stdscr, true);
 	noecho();
 	curs_set(0);
 	getmaxyx(stdscr, maxheight, maxwidth);
-	bodychar = 'x';
+}
+
+void snakeclass::customize_outlook()
+{
+    bodychar = 'o';
 	borderchar = (char)219;
 	foodchar = '*';
-	food.x = 0;
-	food.y = 0;
-	for (int i = 0; i < 5; i++)
-		snake.push_back(snakepart(40+i, 10));
-	points = 0;
-	interval = 110000;
-	get = false;
-	direction = 'l';
-	srand(time(0));
-	putfood();
+}
+
+void snakeclass::create_border()
+{
 	for (int i = 0; i < maxwidth - 1; i++)
 	{
 		move(0, i);
@@ -50,22 +69,23 @@ snakeclass::snakeclass() {
 		move(i,maxwidth-2);
 		addch(borderchar);
 	}
-	for(int i = 0; i < snake.size(); i++)
-	{
+}
+
+void snakeclass::initialize_snake()
+{
+	for (int i = 0; i < 5; i++)
+    {
+		snake.push_back(snakepart(40+i, 10));
 		move(snake[i].y, snake[i].x);
 		addch(bodychar);
 	}
-	move(maxheight - 1, 0);
-	printw("%d", points);
-	refresh();
 }
 
-snakeclass::~snakeclass()
+void snakeclass::initialize_points()
 {
-	nodelay(stdscr, false);
-	getch();
-	getch();
-	endwin();
+    points = 0;
+	move(maxheight - 1, 0);
+	printw("%d", points);
 }
 
 void snakeclass::putfood()
@@ -88,7 +108,7 @@ void snakeclass::putfood()
 
 bool snakeclass::collision()
 {
-	if(snake[0].x == 0 || snake[0].x == maxwidth - 1 || snake[0].y == 0 || snake[0].y == maxheight - 2)
+	if(snake[0].x == 0 || snake[0].x == maxwidth - 2 || snake[0].y == 0 || snake[0].y == maxheight - 2)
 		return true;
 	
 	for(int i = 3; i < snake.size(); i++)
@@ -97,20 +117,37 @@ bool snakeclass::collision()
 
 	if(snake[0].x == food.x && snake[0].y == food.y)
 	{
-		get = true;
+		eat = true;
 		putfood();
-		// add points and print on the screen
-		points += 10;
-		move(maxheight - 1, 0);
-		printw("%d", points);
-		refresh();
-		if ((points%100) == 0)
-			interval -= 10000;
-	}else{get = false;}
+        add_points_and_update_speed();
+	}
+    else
+    {
+        eat = false;
+    }
 	return false;
 }
 
+void snakeclass::add_points_and_update_speed()
+{
+	points += 10;
+	move(maxheight - 1, 0);
+	printw("%d", points);
+	refresh();
+
+	if ((points%100) == 0)
+		interval -= 10000;
+}
+
 void snakeclass::movesnake()
+{
+    read_command();
+    update_tail();
+    update_head();
+	refresh();
+}
+
+void snakeclass::read_command()
 {
 	int input_k = getch();
 	switch (input_k)
@@ -135,7 +172,11 @@ void snakeclass::movesnake()
 			direction = 'q';
 			break;
 	}
-	if(!get)
+}
+
+void snakeclass::update_tail()
+{
+	if(!eat)
 	{
 		snakepart tail = snake[snake.size() - 1];
 		move(tail.y, tail.x);
@@ -143,6 +184,10 @@ void snakeclass::movesnake()
 		refresh();
 		snake.pop_back();
 	}
+}
+
+void snakeclass::update_head()
+{
 	snakepart head = snake[0];
 	switch(direction)
 	{
@@ -157,10 +202,10 @@ void snakeclass::movesnake()
 			break;
 		case 'd':
 			snake.insert(snake.begin(), snakepart(head.x, head.y+1));
+            break;
 	}
 	move(snake[0].y, snake[0].x);
 	addch(bodychar);
-	refresh();
 }
 
 void snakeclass::start()
@@ -169,8 +214,12 @@ void snakeclass::start()
 	{
     	if(collision())
     	{
-    		move(maxwidth/2 - 4, maxheight/2);
-    		printw("Game over");
+            int midx = maxwidth/2 - 4;
+            int midy = maxheight/2;
+    		move(midy, midx);
+            std::string gameover = "Game Over!";
+    		move(maxheight/2, maxwidth/2-gameover.size()/2);
+    		printw(gameover.c_str());
     		break;
     	}
     	movesnake();
@@ -179,3 +228,12 @@ void snakeclass::start()
     	usleep(interval);
 	}
 }
+
+snakeclass::~snakeclass()
+{
+	nodelay(stdscr, false);
+	flushinp();
+	getch();
+	endwin();
+}
+
