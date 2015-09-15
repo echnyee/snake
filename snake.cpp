@@ -212,6 +212,8 @@ void snakeclass::update_head()
 void snakeclass::start()
 {
 	using namespace std;
+    int time_elapsed = 0;
+    int sleep_time = 0;
 	while(true)
 	{
 		chrono::monotonic_clock::time_point start = chrono::monotonic_clock::now();
@@ -230,8 +232,8 @@ void snakeclass::start()
     		break;
 		chrono::monotonic_clock::time_point end = chrono::monotonic_clock::now();
 		chrono::monotonic_clock::duration d = end - start;
-		int time_elapsed = chrono::duration_cast<chrono::microseconds>(d).count();
-		int sleep_time = interval - time_elapsed;
+		time_elapsed = chrono::duration_cast<chrono::microseconds>(d).count();
+		sleep_time = interval - time_elapsed;
 		if ((sleep_time) > 0)
 		{
     		usleep(sleep_time);
